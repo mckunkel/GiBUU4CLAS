@@ -12,13 +12,18 @@
 */
 package domain;
 
-import org.jlab.clas.physics.PhysicsEvent;
+public interface OpenCloseLundFile {
 
-public class LundStructure {
-	private PhysicsEvent physEvent = new PhysicsEvent();
+	public void openLundFile();
 
-	public LundStructure(PhysicsEvent physEvent) {
-		this.physEvent = physEvent;
-	}
+	public void openLundFile(String outputLundName);
+
+	public void closeLundFile();
+
+	public void writeEvent(LundHeader lHeader);
+
+	public void writeEvent(LundParticle lPart);
+
+	public void writeFlush();
 
 }

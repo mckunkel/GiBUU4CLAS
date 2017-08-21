@@ -36,8 +36,8 @@ public class LundParticle implements Serializable {
 	private double vz;
 	private LorentzVector partVector;
 
-	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, double px,
-			double py, double pz, double energy, double mass, double vx, double vy, double vz) {
+	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, double px, double py, double pz,
+	        double energy, double mass, double vx, double vy, double vz) {
 		this.index = index;
 		this.charge = charge;
 		this.type = type;
@@ -55,8 +55,8 @@ public class LundParticle implements Serializable {
 		this.partVector = new LorentzVector(this.px, this.py, this.pz, this.energy);
 	}
 
-	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, LorentzVector lv,
-			double mass, double vx, double vy, double vz) {
+	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, LorentzVector lv, double mass,
+	        double vx, double vy, double vz) {
 		this.index = index;
 		this.charge = charge;
 		this.type = type;
@@ -75,8 +75,8 @@ public class LundParticle implements Serializable {
 
 	}
 
-	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, LorentzVector lv,
-			double mass, Vector3 v3) {
+	public LundParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, LorentzVector lv, double mass,
+	        Vector3 v3) {
 		this.index = index;
 		this.charge = charge;
 		this.type = type;
@@ -229,22 +229,22 @@ public class LundParticle implements Serializable {
 
 	public LundParticle rotateX(double angle) {
 		this.vector().rotateX(angle);
-		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex,
-				this.daughterIndex, this.vector(), this.mass, this.vx, this.vy, this.vz);
+		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex, this.daughterIndex,
+		        this.vector(), this.mass, this.vx, this.vy, this.vz);
 		return tmp;
 	}
 
 	public LundParticle rotateY(double angle) {
 		this.vector().rotateY(angle);
-		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex,
-				this.daughterIndex, this.vector(), this.mass, this.vx, this.vy, this.vz);
+		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex, this.daughterIndex,
+		        this.vector(), this.mass, this.vx, this.vy, this.vz);
 		return tmp;
 	}
 
 	public LundParticle rotateZ(double angle) {
 		this.vector().rotateZ(angle);
-		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex,
-				this.daughterIndex, this.vector(), this.mass, this.vx, this.vy, this.vz);
+		LundParticle tmp = new LundParticle(this.index, this.charge, this.type, this.pid, this.parentIndex, this.daughterIndex,
+		        this.vector(), this.mass, this.vx, this.vy, this.vz);
 		return tmp;
 	}
 
@@ -252,10 +252,22 @@ public class LundParticle implements Serializable {
 		return partVector;
 	}
 
+	public double getPhi() {
+		return this.vector().phi();
+	}
+
+	public double getTheta() {
+		return this.vector().theta();
+	}
+
+	public double getMag() {
+		return this.vector().p();
+	}
+
 	@Override
 	public String toString() {
-		return index + " " + charge + " " + type + " " + pid + " " + parentIndex + " " + daughterIndex + " " + px + " "
-				+ py + " " + pz + " " + energy + " " + mass + " " + vx + " " + vy + " " + vz;
+		return index + " " + charge + " " + type + " " + pid + " " + parentIndex + " " + daughterIndex + " " + px + " " + py + " " + pz
+		        + " " + energy + " " + mass + " " + vx + " " + vy + " " + vz;
 	}
 
 }

@@ -12,25 +12,23 @@
 */
 package domain;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import org.jlab.clas.pdg.PDGParticle;
 
 public class ReadGiBuuOutput {
 
 	private String inputFileName;
-	private String outputLundName;
 
 	private int nParticles = 0;
-	private int nEntries = 0;
 	private int partIndex = 0;
 	private double partWeight;
 	private double rotationAngle;
@@ -40,13 +38,13 @@ public class ReadGiBuuOutput {
 	private List<LundHeader> lundHeader;
 	private List<LundParticle> lundParts;
 
-	private FileWriter fw = null;
-	private BufferedWriter bw = null;
-	private PrintWriter out = null;
+	private Map<LundHeader, List<LundParticle>> lundMap;
 
-	public ReadGiBuuOutput(String inputFileName, String outputLundName) {
+	private int setmotherPID;
+	private boolean skimFile = false;
+
+	public ReadGiBuuOutput(String inputFileName) {
 		this.inputFileName = inputFileName;
-		this.outputLundName = outputLundName;
 		allLines = new ArrayList<String>();
 		chunks = new ArrayList<List<String>>();
 		lundHeader = new ArrayList<LundHeader>();
@@ -54,10 +52,14 @@ public class ReadGiBuuOutput {
 	}
 
 	public void runConversion() {
-		openLundFile();
 		readFile();
-		setNEntries();
-		closeLundFile();
+	}
+
+	public void runConversion(int motherPID) {
+		this.setmotherPID = motherPID;
+		this.skimFile = true;
+		this.lundMap = new LinkedHashMap<>();
+		readFile();
 	}
 
 	private void readFile() {
@@ -90,7 +92,7 @@ public class ReadGiBuuOutput {
 		return result;
 	}
 
-	public void seperateList(List<String> strList) {
+	private void seperateList(List<String> strList) {
 		lundHeader.clear();
 		lundParts.clear();
 		for (String string : strList) {
@@ -117,8 +119,7 @@ public class ReadGiBuuOutput {
 	private void createLundHeader(List<String> list) {
 		for (String string : list) {
 			String[] splited = string.split("\\s+");
-			addHeader(getNParticles(), 1, 1, 0.0, 0.0, 0.0, 0.0, Double.parseDouble(splited[3]),
-					Double.parseDouble(splited[2]));
+			addHeader(getNParticles(), 1, 1, 0.0, 0.0, 0.0, 0.0, Double.parseDouble(splited[3]), Double.parseDouble(splited[2]));
 			rotationAngle = Double.parseDouble(splited[6]);
 		}
 	}
@@ -127,83 +128,104 @@ public class ReadGiBuuOutput {
 		partIndex++;
 		for (String string : list) {
 			String[] splited = string.trim().split("\\s+");
-			PDGParticle pdgParticle = GiBUUDatabase.getParticleById(Integer.parseInt(splited[0]),
-					Integer.parseInt(splited[1]));
+			PDGParticle pdgParticle = GiBUUDatabase.getParticleById(Integer.parseInt(splited[0]), Integer.parseInt(splited[1]));
 			addParticle(partIndex, pdgParticle.charge(), 1, pdgParticle.pid(), Integer.parseInt(splited[6]), 0,
-					Double.parseDouble(splited[3]), Double.parseDouble(splited[4]), Double.parseDouble(splited[5]),
-					Double.parseDouble(splited[2]), pdgParticle.mass(), 0.0, 0.0, 0.0);
+			        Double.parseDouble(splited[3]), Double.parseDouble(splited[4]), Double.parseDouble(splited[5]),
+			        Double.parseDouble(splited[2]), pdgParticle.mass(), 0.0, 0.0, 0.0);
 		}
 	}
 
-	public void addParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, double px,
-			double py, double pz, double energy, double mass, double vx, double vy, double vz) {
-		lundParts.add(new LundParticle(index, charge, type, pid, parentIndex, daughterIndex, px, py, pz, energy, mass,
-				vx, vy, vz));
+	private void addParticle(int index, int charge, int type, int pid, int parentIndex, int daughterIndex, double px, double py, double pz, double energy, double mass, double vx, double vy, double vz) {
+		lundParts.add(new LundParticle(index, charge, type, pid, parentIndex, daughterIndex, px, py, pz, energy, mass, vx, vy, vz));
 	}
 
-	public void addHeader(int numParticles, int numTargetNuc, int numTargetProt, double targetPol, double beamPol,
-			double x, double y, double q2, double nu) {
+	private void addHeader(int numParticles, int numTargetNuc, int numTargetProt, double targetPol, double beamPol, double x, double y, double q2, double nu) {
 		double W = Math.sqrt(-q2 + Math.pow(0.938272, 2) + 2.0 * 0.938272 * nu);
-		lundHeader.add(new LundHeader(numParticles, numTargetNuc, numTargetProt, targetPol, beamPol, x, partWeight, W,
-				q2, nu));
-	}
-
-	private void openLundFile() {
-		if (new File(outputLundName).exists()) {
-			System.err.println("This Lund file already exists");
-			System.err.println("Please delete it or rename the output file");
-			System.exit(0);
-		} else {
-			try {
-				fw = new FileWriter(outputLundName, true);
-				bw = new BufferedWriter(fw);
-				out = new PrintWriter(bw);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-
-	private void closeLundFile() {
-
-		out.close();
-		try {
-			bw.close();
-			fw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		lundHeader.add(new LundHeader(numParticles, numTargetNuc, numTargetProt, targetPol, beamPol, x, partWeight, W, q2, nu));
 	}
 
 	private void createLundFile() {
-		for (LundHeader lh : lundHeader) {
-			out.write(lh + "\n");
+		// rotate scattered lepton around z-axis angle 0<theta<2pi
+		if (skimFile) {
+			int gammaCount = 0;
+			int electronCount = 0;
+			int positronCount = 0;
+			int protonCount = 0;
+			int mothercount = 0;
+
+			List<LundParticle> tempParticleList = new ArrayList<>();
+			boolean printList = false;
+			if (lundParts.size() <= 5) {
+
+				// System.out.println("Number of lundparts" + lundParts.size() + " Number of particles " + this.nParticles);
+				// System.out.println(lundParts);
+				for (LundParticle lp : lundParts) {
+					LundParticle lnew = lp.rotateY(-rotationAngle);
+					tempParticleList.add(lnew);
+					if (lnew.getPid() == -11) {
+						positronCount++;
+					}
+					if (lnew.getPid() == 11) {
+						electronCount++;
+					}
+					if (lnew.getPid() == 2212) {
+						protonCount++;
+					}
+					if (lnew.getPid() == 22) {
+						gammaCount++;
+					}
+					if (lnew.getParentIndex() == setmotherPID) {
+						mothercount++;
+					}
+
+				}
+				if (mothercount == 3 && protonCount == 1 && positronCount == 1 && electronCount == 2 && gammaCount > 0) {
+
+					printList = true;
+				}
+				if (printList) {
+					// System.out.println(tempParticleList.get(tempParticleList.size() - 1) + " last lund?");
+					List<LundParticle> newList = rotateScatteredLepton(tempParticleList);
+					// System.out.println(newList.get(newList.size() - 1) + " last lund rotated?");
+					lundMap.put(lundHeader.get(0), newList);
+					// System.out.println("lund to be printed " + lundHeader.size());
+				}
+
+			}
+		} else {
+			List<LundParticle> tempParticleList = new ArrayList<>();
 			for (LundParticle lp : lundParts) {
 				LundParticle lnew = lp.rotateY(-rotationAngle);
-				out.write(lnew + "\n");
+				tempParticleList.add(lnew);
 			}
-			out.flush();
+			List<LundParticle> newList = rotateScatteredLepton(tempParticleList);
+			lundMap.put(lundHeader.get(0), newList);
 		}
 	}
 
-	public int getNEntries() {
-		return nEntries;
+	private List<LundParticle> rotateScatteredLepton(List<LundParticle> aList) {
+		List<LundParticle> newList = new ArrayList<>();
+		newList.addAll(aList);
+		Random rn = new Random();
+		double newAngle = (2.0 * Math.PI) * rn.nextDouble();
+		LundParticle lParticle = aList.get(aList.size() - 1);
+		LundParticle lnew = lParticle.rotateZ(newAngle);
+
+		newList.remove(aList.size() - 1);
+		newList.add(aList.size() - 1, lnew);
+		return newList;
 	}
 
-	public int getNParticles() {
+	private int getNParticles() {
 		return nParticles;
-	}
-
-	private void setNEntries() {
-		this.nEntries = chunks.size();
 	}
 
 	private void setNParticles(List<String> list) {
 		this.nParticles = list.size() - 2;
 	}
 
-	// public static void main(String[] args) {
-	// ReadGiBuuOutput myreader = new ReadGiBuuOutput("test.dat", "my.lund");
-	// myreader.runConversion();
-	// }
+	public Map<LundHeader, List<LundParticle>> getLundMap() {
+		return this.lundMap;
+	}
+
 }
